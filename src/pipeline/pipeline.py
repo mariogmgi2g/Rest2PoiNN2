@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import os
 import pathlib
-from itertools import product
+from itertools import product, islice
 from multiprocessing import Pool
 import pickle
 
@@ -72,104 +72,39 @@ class Pipeline:
     
 
     def obtener_codificacion_absoluta_multiproceso(self, flag_retomar=True) -> None:
-        ruta_codificacion_pivot = self.__ruta_pipeline + 'codificacion_pivot.parquet'
-        if flag_retomar and os.path.exists(ruta_codificacion_pivot):
-            df_codificacion_pivot = pd.read_parquet(ruta_codificacion_pivot)
-        else:
-            df_codificacion_pivot = pd.DataFrame()
-
-        ruta_elementos_a = f'./data/scraping/{self.tipo_a}/{self.ciudad_a}/listado_{self.tipo_a}.parquet'
-        elementos_primitivo_a = pd.read_parquet(ruta_elementos_a, columns=['Id', 'nombre'])
-        elementos_archivos_a = elementos_primitivo_a.apply(
-            lambda val: f'./data/scraping/{self.tipo_a}/{self.ciudad_a}/reviews/' + '_'.join( [ str(val[0]), val[1] + '.parquet' ] ), axis=1).values
-
-        ruta_elementos_b = f'./data/scraping/{self.tipo_b}/{self.ciudad_b}/listado_{self.tipo_b}.parquet'
-        elementos_primitivo_b = pd.read_parquet(ruta_elementos_b, columns=['Id', 'nombre'])
-        elementos_archivos_b = elementos_primitivo_b.apply(
-            lambda val: f'./data/scraping/{self.tipo_b}/{self.ciudad_b}/reviews/' + '_'.join( [ str(val[0]), val[1] + '.parquet' ] ), axis=1).values
-
-        total_duplas = len(elementos_archivos_a) * len(elementos_archivos_b)
-        producto_cartesiano = product(elementos_archivos_a, elementos_archivos_b)
-
-        with Pool() as pool: # Por defecto, tantos subprocesos como cores
-            resultados = pool.imap_unordered(
-                Pipeline.subproceso_codificacion, producto_cartesiano)
-            
-            for i, resultado in enumerate(resultados):
-                interseccion, elemento_a, elemento_b = resultado
-                fila = {'alemento_a': [elemento_a], 'alemento_b': [elemento_b], 'interseccion': [interseccion]}
-                df_codificacion_pivot_fila = pd.DataFrame(fila)
-                df_codificacion_pivot = pd.concat([ df_codificacion_pivot, df_codificacion_pivot_fila ])
-                df_codificacion_pivot.to_parquet(ruta_codificacion_pivot)
-                print(f'Codificacion ({elemento_a}, {elemento_b}): {interseccion}, {i}/{total_duplas} completadas')
+        ruta_cod_tmp = self.__ruta_pipeline + 'codificacion_tmp.txt'
+        cont = self.__leer_ultimo_cont(ruta_cod_tmp)
         
+        # se abre el documento si existe, Estructura: idx, elemento_a, elemento_b, interseccion
+        with open(ruta_cod_tmp, 'a+') as f:  
 
-    def obtener_codificacion_absoluta(
-            self, flag_recalcular_usuarios_interseccionados:bool=False,
-            ) -> None:
-        # Genera un df cuyas columnas son los pois y las filas los restaurantes
-        # y los valores el recuento de usuarios únicos interseccionados y lo guarda
-        print('Calculando intersecciones cruzadas entre los elementos de las dos ciudades...')
-        ruta_cod_absoluta = self.__ruta_pipeline + 'cod_absoluta.parquet'
-        cantidad_usuarios, usuarios_unicos = self.obtener_usuarios_interseccionados(
-            flag_reintento_guardado = flag_recalcular_usuarios_interseccionados
-        )
+            # Lectura de los elementos
+            ruta_elementos_a = f'./data/scraping/{self.tipo_a}/{self.ciudad_a}/listado_{self.tipo_a}.parquet'
+            elementos_primitivo_a = pd.read_parquet(ruta_elementos_a, columns=['Id', 'nombre'])
+            elementos_archivos_a = elementos_primitivo_a.apply(
+                lambda val: f'./data/scraping/{self.tipo_a}/{self.ciudad_a}/reviews/' + '_'.join( [ str(val[0]), val[1] + '.parquet' ] ), axis=1).values
 
-        # Lectura de los archivos de listados de items
-        ruta_df_usuarios_a = self.__ruta_ciudad_a + 'usuarios_por_elemento.parquet'
-        ruta_df_usuarios_b = self.__ruta_ciudad_b + 'usuarios_por_elemento.parquet'
+            ruta_elementos_b = f'./data/scraping/{self.tipo_b}/{self.ciudad_b}/listado_{self.tipo_b}.parquet'
+            elementos_primitivo_b = pd.read_parquet(ruta_elementos_b, columns=['Id', 'nombre'])
+            elementos_archivos_b = elementos_primitivo_b.apply(
+                lambda val: f'./data/scraping/{self.tipo_b}/{self.ciudad_b}/reviews/' + '_'.join( [ str(val[0]), val[1] + '.parquet' ] ), axis=1).values
 
-        df_usuarios_ciudad_a = pd.read_parquet(ruta_df_usuarios_a)
-        df_usuarios_ciudad_b = pd.read_parquet(ruta_df_usuarios_b)
+            total_duplas = len(elementos_archivos_a) * len(elementos_archivos_b)
+            producto_cartesiano = product(elementos_archivos_a, elementos_archivos_b)
 
-
-        # filas = {}
-        dic_intersecciones = {}
-        tipo_b_singular = self.tipo_b[:-1]
-        print(f'Filas: {self.ciudad_a}, {self.tipo_a}')
-        print(f'Columnas: {self.ciudad_b}, {self.tipo_b}')
-        elementos_b_unicos = df_usuarios_ciudad_b['elemento'].unique()
-        elementos_a_unicos = df_usuarios_ciudad_a['elemento'].unique()
-
-        producto_cartesiano_elementos = product(elementos_a_unicos, elementos_b_unicos)
-        n_combinaciones = len(elementos_b_unicos) * len(elementos_a_unicos)
-
-        with Pool() as pool: # Por defecto, tantos subprocesos como cores
-            resultados = pool.imap_unordered(
-                Pipeline.__calcular_interseccion_usuarios, 
-                producto_cartesiano_elementos)
-            cont = 0
-            for interseccion, elemento_a, elemento_b in resultados:
-                dupla_elementos = (elemento_a, elemento_b)
-                """
-                dic_intersecciones[dupla_elementos] = interseccion
-                with open(self.__ruta_pipeline + '.tmp_intersecciones.pkl', 'wb') as f:
-                    pickle.dump(dic_intersecciones, f)
-                """
-                print(f'Se han calculado {cont}/{n_combinaciones} intersecciones')
-                cont += 1
-
-        """
-        for i, elemento_b in enumerate(elementos_b_unicos): # pois
-            print(f'*\t{tipo_b_singular} {elemento_b} ({i}/{len(elementos_b_unicos)})')
-            fila = {}
-
-            for elemento_a in elementos_a_unicos: # restaurantes
+            # cont = total_duplas - 30 # ELIMINAR TRAS ACABAR LAS COMPROBACIONES
+            with Pool() as pool: # Por defecto, tantos subprocesos como cores
+                resultados = pool.imap_unordered( # islice hace un slice del producto cartesiano
+                    Pipeline.subproceso_codificacion, islice(producto_cartesiano, cont, total_duplas))
                 
-                usuarios_b = df_usuarios_ciudad_b.loc[
-                    df_usuarios_ciudad_b['elemento'] == elemento_b, 
-                    'usuario_ref'].values
-                usuarios_a = df_usuarios_ciudad_a.loc[
-                    df_usuarios_ciudad_a['elemento'] == elemento_a, 
-                    'usuario_ref'].values
-                fila[elemento_a] = sum(np.isin(usuarios_a, usuarios_b))
+                for resultado in resultados:
+                    interseccion, elemento_a, elemento_b = resultado
+                    fila = f'{cont}, {elemento_a}, {elemento_b}, {interseccion}\n'
+                    f.write(fila)
+                    
+                    print(f'Codificacion ({elemento_a}, {elemento_b}): {interseccion}, {cont}/{total_duplas} completadas')
 
-            filas[elemento_b] = fila
-
-        print('Cálculo finalizado')
-        df_cod_absoluta = pd.DataFrame(filas)
-        df_cod_absoluta.to_parquet(ruta_cod_absoluta)
-        """
+                    cont += 1
                 
 
     # Funciones Secundarias ----------------------------------------------------
@@ -240,3 +175,22 @@ class Pipeline:
         if not os.path.exists(ruta_pipeline):
             pathlib.Path(ruta_pipeline).mkdir(parents=True, exist_ok=True)
         self.__ruta_pipeline = ruta_pipeline
+
+    
+    # def __leer_ultima_linea(ruta_archivo_tmp:str):
+    def __leer_ultimo_cont(self, ruta_archivo_tmp:str):
+        if os.path.exists(ruta_archivo_tmp):
+            with open(ruta_archivo_tmp, 'rb') as f:
+                try: # captura error en caso de que el archivo sea de una sola línea
+                    f.seek(-2, os.SEEK_END)
+                    while f.read(1) != b'\n':
+                        f.seek(-2, os.SEEK_CUR)
+                    ultima_linea = f.readline().decode()
+                    cont = int(str(ultima_linea).split(', ')[0]) + 1
+                    return cont
+                except OSError:
+                    f.seek(0)
+                    return 0
+                # last_line = f.readline().decode()
+                # return last_line
+        else: return 0
