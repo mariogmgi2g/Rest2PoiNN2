@@ -2,3 +2,7 @@
 .ipynb
 **/imagenes
 **/reviews
+.venv/
+venv/
+**.DS_Store
+*.h5s
