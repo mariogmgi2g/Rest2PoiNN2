@@ -1,8 +1,12 @@
 **/__pycache__
-.ipynb
+**.ipynb
 **/imagenes
 **/reviews
 .venv/
 venv/
 **.DS_Store
 *.h5s
+**dev**dev
+**nohup.out
+**.log
+**tmp**

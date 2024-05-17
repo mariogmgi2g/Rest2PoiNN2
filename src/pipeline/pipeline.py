@@ -95,11 +95,11 @@ class Pipeline:
             # cont = total_duplas - 30 # ELIMINAR TRAS ACABAR LAS COMPROBACIONES
             with Pool() as pool: # Por defecto, tantos subprocesos como cores
                 resultados = pool.imap_unordered( # islice hace un slice del producto cartesiano
-                    Pipeline.subproceso_codificacion, islice(producto_cartesiano, cont, total_duplas))
+                    Pipeline.subproceso_codificacion, islice(producto_cartesiano, cont, total_duplas), chunksize=10)
                 
                 for resultado in resultados:
                     interseccion, elemento_a, elemento_b = resultado
-                    fila = f'{cont}, {elemento_a}, {elemento_b}, {interseccion}\n'
+                    fila = f'{cont};separador;{elemento_a};separador;{elemento_b};separador;{interseccion}\n'
                     f.write(fila)
                     
                     print(f'Codificacion ({elemento_a}, {elemento_b}): {interseccion}, {cont}/{total_duplas} completadas')

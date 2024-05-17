@@ -1,8 +1,0 @@
-Se inicia la transformación de los archivos
-/Users/administrador/Desktop/Sistemas de recomendación y deep learning/Rest2PoiNN2/src/pipeline/pipeline.py:85: FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
-  lambda val: f'./data/scraping/{self.tipo_a}/{self.ciudad_a}/reviews/' + '_'.join( [ str(val[0]), val[1] + '.parquet' ] ), axis=1).values
-/Users/administrador/Desktop/Sistemas de recomendación y deep learning/Rest2PoiNN2/src/pipeline/pipeline.py:90: FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
-  lambda val: f'./data/scraping/{self.tipo_b}/{self.ciudad_b}/reviews/' + '_'.join( [ str(val[0]), val[1] + '.parquet' ] ), axis=1).values
-Codificacion (Pink Monkey, Touriststation Piazza Venezia): 0, 78408741/78408744 completadas
-Codificacion (Pink Monkey, Francesca Leonetti): 0, 78408742/78408744 completadas
-Codificacion (Pink Monkey, Antonio Acampora): 0, 78408743/78408744 completadas

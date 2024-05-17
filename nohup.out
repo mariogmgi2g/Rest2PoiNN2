@@ -1,5 +1,0 @@
-['.DS_Store', 'bin', 'tests', '.venv', 'data', 'nohup.out', 'src']
-Traceback (most recent call last):
-  File "/Users/administrador/Desktop/Sistemas de recomendación y deep learning/Rest2PoiNN2/tests/test_scraping_poi.py", line 4, in <module>
-    from src.scraper.ciudad_pois import ScraperPois
-ModuleNotFoundError: No module named 'src'
