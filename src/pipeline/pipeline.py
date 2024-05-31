@@ -4,6 +4,8 @@ import os
 import pathlib
 from itertools import product, islice
 from multiprocessing import Pool
+import cv2
+import shutil
 import pickle
 
 
@@ -194,3 +196,33 @@ class Pipeline:
                 # last_line = f.readline().decode()
                 # return last_line
         else: return 0
+
+
+    def __comprobar_imagen_vacia(self, ruta_imagen:str) -> bool:
+        imagen = cv2.imread(ruta_imagen)
+        return imagen is None
+
+
+    def __seleccionar_jpgs(self, ruta_imagenes_elemento:str) -> bool:
+        rutas_imagenes = [
+            f 
+            for f in os.listdir(ruta_imagenes_elemento) 
+            if f.endswith('.jpg')]
+        return rutas_imagenes
+
+
+    def __eliminar_imagenes_vacias_del_elemento(self, ruta_imagenes_elemento:str) -> None:
+        for imagen in self.__seleccionar_jpgs(ruta_imagenes_elemento):
+            ruta_imagen = ruta_imagenes_elemento + imagen
+            if self.__comprobar_imagen_vacia(ruta_imagen):
+                os.remove(ruta_imagen)
+        f_restantes = os.listdir(ruta_imagenes_elemento)
+        if ( len(f_restantes) == 1 and f_restantes[0].endswith('.parquet') ) or ( len(f_restantes) == 0 ):
+            print(f'Directorio {ruta_imagenes_elemento} eliminado por no tener imágenes válidas')
+            shutil.rmtree(ruta_imagenes_elemento)
+
+
+    def eliminar_elementos_erroneos(self, ruta_imagenes:str) -> None:
+        for ruta_elemento in os.listdir(ruta_imagenes):
+            if ruta_elemento != '.DS_Store':
+                self.__eliminar_imagenes_vacias_del_elemento(ruta_imagenes + ruta_elemento + '/')
