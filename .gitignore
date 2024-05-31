@@ -5,7 +5,7 @@
 .venv/
 venv/
 **.DS_Store
-*.h5s
+*.h5
 **dev**dev
 **nohup.out
 **.log

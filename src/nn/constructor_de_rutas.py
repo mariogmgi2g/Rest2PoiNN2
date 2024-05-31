@@ -40,7 +40,7 @@ class ConstructorDeRutas:
             ciudad = self.ciudad_b
             tipo = self.tipo_b
 
-        ruta_scraping = f'./data//scraping/{tipo}/{ciudad}/'
+        ruta_scraping = f'./data/scraping/{tipo}/{ciudad}/'
         return ruta_scraping
     
 
