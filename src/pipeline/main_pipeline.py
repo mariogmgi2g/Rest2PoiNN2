@@ -12,7 +12,8 @@ def main():
     pipeline = Pipeline(ciudad_a, ciudad_b)
     # pipeline.obtener_usuarios_interseccionados(flag_reintento_guardado=True)
     pipeline.obtener_codificacion_absoluta_multiproceso(flag_retomar=False)
-
+    ruta_imagenes = './data/scraping/restaurantes/Madrid/imagenes/'
+    pipeline.eliminar_elementos_erroneos(ruta_imagenes)
 
 if __name__ == '__main__':
     main()

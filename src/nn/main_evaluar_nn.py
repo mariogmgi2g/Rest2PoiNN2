@@ -74,7 +74,8 @@ if __name__ == '__main__':
     df_y_pred_nn = pd.DataFrame(y_nn_val_pred, columns=cols)
     df_y_pred_nn['elementos a'] = index
     df_y_pred_agrupado_nn = agrupar_y_obtener_metricas_prediccion_nn(df_y_pred_nn)
-    metricas_rankings = Metricas.obtener_metricas_rankings(df_y_pred_agrupado_nn)
+    # Ejemplo de top
+    metricas_rankings = Metricas.obtener_metricas_rankings(df_y_pred_agrupado_nn, top=20)
     print(metricas_rankings)
 
     valores_resultados = {
